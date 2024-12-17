@@ -1,77 +1,84 @@
-#!/bin/bash
-
+# Define allowed ip suffixes
 allowed_ips=(1 3 4 5 6 7 8 9 10 15 17 20 21 22 23 24 25)
 
 parse_ips() {
-    local -n output_array="$1"
+    # Declare temporary arrays and take args
+    declare -n output_array="$1"
     shift
+    local -A unique_ips
+    local temp_array=()
+
+    # Remove diplicate arrays and add ip suffixes to ip prefixes
     for ip_suffix in "$@"; do
-        # Ensure the provided suffix is numeric
-        if [[ ! $ip_suffix =~ ^[0-9]+$ ]]; then
-            echo "Invalid IP suffix: $ip_suffix"
-            exit 1
-        fi
-        # Check if the suffix is in the allowed list
-        if [[ " ${allowed_ips[*]} " =~ " $ip_suffix " ]]; then
-            output_array+=("10.200.142.$ip_suffix")
+        if [[ $ip_suffix =~ ^[0-9]+$ ]] && [[ " ${allowed_ips[*]} " == *" $ip_suffix "* ]] && [[ -z "${unique_ips[$ip_suffix]}" ]]; then
+            unique_ips["$ip_suffix"]=1
+            temp_array+=("10.200.142.$ip_suffix")
         else
-            echo "Invalid IP suffix: $ip_suffix"
-            exit 1
+            [[ -z "${unique_ips[$ip_suffix]}" ]] && echo "Invalid or disallowed IP suffix: $ip_suffix"
         fi
     done
+
+    output_array=("${temp_array[@]}")
 }
 
-add_ips() {
-    local -n output_list="$1"
-    shift
-    for ip in "$@"; do
-        if [[ ! " ${output_list[*]} " =~ " $ip " ]]; then
-            output_list+=("$ip")
-        fi
-    done
-}
-
+# Main function that handles parameters passed to the script
 process_arguments() {
+    # Define variables
     ips=()
     main_command=""
+    cips=()
+    cmain_command=""
 
+    # Take arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
-        -ip) 
+        -ip | -cip)
+            option="$1"
             shift
-            local ip_args=()
+            ip_args=()
             while [[ $# -gt 0 && $1 != -* ]]; do
                 ip_args+=("$1")
                 shift
             done
-            parse_ips ips "${ip_args[@]}"
+            if [[ $option == "-ip" ]]; then
+                parse_ips ips "${ip_args[@]}"
+            else
+                parse_ips cips "${ip_args[@]}"
+            fi
+
+
 
             ;; 
-        -cmd) 
-            main_command="$2"
+        -cmd | -ccmd)
+            if [[ -z $2 ]]; then
+                echo "Error: No command provided after $1"
+                exit 1
+            fi
+            [[ $1 == "-cmd" ]] && main_command="$2" || cmain_command="$2"
             shift 2
+
+
 
             ;; 
         *) 
             echo "Unknown option: $1"
             exit 1
 
+
+
             ;; 
         esac
     done
 }
 
-run_command() {
-    local ip="$1"
-    local command="$2"
-    echo "Running '$command' on $ip"
-    # Uncomment the line below to execute the command
-    # ssh "$ip" "$command"
-}
-
 execute_commands() {
     for ip in "${ips[@]}"; do
-        run_command "$ip" "$main_command"
+        echo "Running '$main_command' on $ip"
+        # ssh root@"$ip" "$main_command" # Uncomment to execute
+    done
+    for cip in "${cips[@]}"; do
+        echo "Running '$cmain_command' on $cip"
+        # ssh root@"$ip" "$cmain_command" # Uncomment to execute
     done
 }
 
