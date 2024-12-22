@@ -3,8 +3,13 @@
         {
             "type": "add",
             "pluginName": "fleet.shell"
+        },
+        {
+            "type": "add",
+            "pluginName": "fleet.prettier"
         }
     ],
     "prettier.mode": "Auto",
-    "toolchains": []
+    "toolchains": [],
+    "editor.formatOnSave": true
 }
