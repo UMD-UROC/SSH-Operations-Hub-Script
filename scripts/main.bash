@@ -134,10 +134,6 @@ execute_commands() {
     if [ ${#ips[@]} -eq 0 ] && [ -z "$main_command" ]; then
         echo "Warning: No primary drone IPs or commands specified"
     fi
-    
-    if [ ${#cips[@]} -eq 0 ] && [ -z "$cmain_command" ]; then
-        echo "Warning: No companion drone IPs or commands specified"
-    fi
 
     for ip in "${ips[@]}"; do
         DRONE_NUM="${ip##*.}" # Store last part of IP in accessible variable to dynamically run commands

@@ -12,8 +12,16 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "apt-get update && apt-get install -y rsync bash-completion"
+	"postCreateCommand": "apt-get update && apt-get install -y bash-completion",
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"eamodio.gitlens"
+			]
+		}
+	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	"remoteUser": "root"
 }
