@@ -58,47 +58,66 @@ parse_ips() {
 process_arguments() {
     if [ $# -eq 0 ]; then
         echo "Error: No arguments provided"
-        echo "Usage: $0 [-ip ip_list] [-cip ip_list] [-cmd command] [-ccmd command]"
+        echo "Usage: $0 [-primary|-ip ip_list] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command]"
         exit 1
     fi
 
-    # Initialize arrays to store IP addresses
-    ips=()
+    # Initialize variables
+    primary_ips=()
+    secondary_ips=()
     main_command=""
-    cips=()
-    cmain_command=""
+    primary_user=""
+    secondary_user=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -ip)
+            -primary|-ip)
                 shift
                 if [[ ! $1 || $1 == -* ]]; then
-                    echo "Error: -ip flag requires at least one IP address"
+                    echo "Error: -primary/-ip flag requires at least one IP address"
                     exit 1
                 fi
+                ip_args=()
                 while [[ $1 && $1 != -* ]]; do
                     ip_args+=("$1")
                     shift
                 done
-                if ! parse_ips ips "${ip_args[@]}"; then
-                    echo "Error: Failed to process IP addresses"
+                if ! parse_ips primary_ips "${ip_args[@]}"; then
+                    echo "Error: Failed to process primary IP addresses"
                     exit 1
                 fi
                 ;;
-            -cip)
+            -secondary)
                 shift
                 if [[ ! $1 || $1 == -* ]]; then
-                    echo "Error: -cip flag requires at least one IP address"
+                    echo "Error: -secondary flag requires at least one IP address"
                     exit 1
                 fi
+                ip_args=()
                 while [[ $1 && $1 != -* ]]; do
-                    cip_args+=("$1")
+                    ip_args+=("$1")
                     shift
                 done
-                if ! parse_ips cips "${cip_args[@]}"; then
-                    echo "Error: Failed to process companion IP addresses"
+                if ! parse_ips secondary_ips "${ip_args[@]}"; then
+                    echo "Error: Failed to process secondary IP addresses"
                     exit 1
                 fi
+                ;;
+            -puser|-user)
+                if [ -z "$2" ]; then
+                    echo "Error: -puser/-user flag requires a username argument"
+                    exit 1
+                fi
+                primary_user="$2"
+                shift 2
+                ;;
+            -suser)
+                if [ -z "$2" ]; then
+                    echo "Error: -suser flag requires a username argument"
+                    exit 1
+                fi
+                secondary_user="$2"
+                shift 2
                 ;;
             -cmd)
                 if [ -z "$2" ]; then
@@ -108,21 +127,14 @@ process_arguments() {
                 main_command="$2"
                 shift 2
                 ;;
-            -ccmd)
-                if [ -z "$2" ]; then
-                    echo "Error: -ccmd flag requires a command argument"
-                    exit 1
-                fi
-                cmain_command="$2"
-                shift 2
-                ;;
             *)
                 echo "Error: Unknown option '$1'"
                 echo "Available options:"
-                echo "  -ip   : List of IP addresses for primary drones"
-                echo "  -cip  : List of IP addresses for companion drones"
-                echo "  -cmd  : Command to execute on primary drones"
-                echo "  -ccmd : Command to execute on companion drones"
+                echo "  -primary, -ip  : List of IP addresses for primary group"
+                echo "  -puser, -user  : Username for primary group"
+                echo "  -secondary     : List of IP addresses for secondary group"
+                echo "  -suser         : Username for secondary group"
+                echo "  -cmd           : Command to execute on all drones"
                 exit 1
                 ;;
         esac
@@ -131,27 +143,33 @@ process_arguments() {
 
 # Function that executes commands
 execute_commands() {
-    if [ ${#ips[@]} -eq 0 ] && [ -z "$main_command" ]; then
-        echo "Warning: No primary drone IPs or commands specified"
+    if [ ${#primary_ips[@]} -eq 0 ] && [ ${#secondary_ips[@]} -eq 0 ]; then
+        echo "Warning: No IP addresses specified"
+        return
     fi
 
-    for ip in "${ips[@]}"; do
-        DRONE_NUM="${ip##*.}" # Store last part of IP in accessible variable to dynamically run commands
+    if [ -z "$main_command" ]; then
+        echo "Warning: No command specified"
+        return
+    fi
+
+    # Execute for primary group
+    for ip in "${primary_ips[@]}"; do
+        DRONE_NUM="${ip##*.}"
         command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
-        echo "Running '$command' on $ip"
-        # ssh root@"$ip" "$command"
-        # Debug Command
-        # - echo $DRONE_NUM
+        echo "Running '$command' on $primary_user@$ip"
+        #ssh "$primary_user@$ip" "$command"
     done
 
-    for cip in "${cips[@]}"; do
-        DRONE_NUM="${cip##*.}"
-        command="${cmain_command//\$DRONE_NUM/$DRONE_NUM}"
-        echo "Running '$command' on $cip"
-        # ssh root@"$cip" "$command"
-        # Debug Command
-        # - echo $DRONE_NUM
-    done
+    # Execute for secondary group
+    if [ ${#secondary_ips[@]} -gt 0 ] && [ -n "$secondary_user" ]; then
+        for ip in "${secondary_ips[@]}"; do
+            DRONE_NUM="${ip##*.}"
+            command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
+            echo "Running '$command' on $secondary_user@$ip"
+            ssh "$secondary_user@$ip" "$command"
+        done
+    fi
 }
 
 # Main script execution
