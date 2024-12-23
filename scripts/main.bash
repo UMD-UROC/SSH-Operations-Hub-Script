@@ -1,4 +1,11 @@
 #!/bin/bash
+
+###############################################################################
+# Script: Drone Data Management Application
+# Returns:
+#   0 on success, 1 on failure
+###############################################################################
+
 # Allowed IPs: add ip ranges with {ip_range_start..ip_range_end} ex) {1..10}
 allowed_ips=({1..10} 15 17 {20..25})
 
