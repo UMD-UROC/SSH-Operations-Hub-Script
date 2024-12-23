@@ -14,25 +14,47 @@ parse_ips() {
     local -A unique_ips=()
     local valid_ip_found=false
 
+    if [ $# -eq 0 ]; then
+        echo "Error: No IP addresses provided"
+        return 1
+    fi
+
     # Iterate over IP suffixes passed as arguments
     for ip_suffix in "$@"; do
-        # Check if IP suffix is allowed and not duplicated
-        if [[ "${allowed_ips[*]}" =~ (^|[[:space:]])"$ip_suffix"($|[[:space:]]) ]] && [[ -z "${unique_ips[$ip_suffix]}" ]]; then
-            unique_ips[$ip_suffix]=1
-            output_array+=("10.200.142.$ip_suffix")
-            valid_ip_found=true
-        else
-            echo "Duplicated or Invalid IP suffix: $ip_suffix"
+        if ! [[ "$ip_suffix" =~ ^[0-9]+$ ]]; then
+            echo "Error: Invalid IP suffix '$ip_suffix' - must be a number"
+            continue
         fi
+        
+        if ! [[ "${allowed_ips[*]}" =~ (^|[[:space:]])"$ip_suffix"($|[[:space:]]) ]]; then
+            echo "Error: IP suffix '$ip_suffix' is not in the allowed range"
+            continue
+        fi
+        
+        if [[ -n "${unique_ips[$ip_suffix]}" ]]; then
+            echo "Warning: Duplicate IP suffix '$ip_suffix' ignored"
+            continue
+        fi
+        
+        unique_ips[$ip_suffix]=1
+        output_array+=("10.200.142.$ip_suffix")
+        valid_ip_found=true
     done
 
     if ! $valid_ip_found; then
+        echo "Error: No valid IP addresses were provided"
         return 1
     fi
 }
 
 # Function to process flags passed to script
 process_arguments() {
+    if [ $# -eq 0 ]; then
+        echo "Error: No arguments provided"
+        echo "Usage: $0 [-ip ip_list] [-cip ip_list] [-cmd command] [-ccmd command]"
+        exit 1
+    fi
+
     # Initialize arrays to store IP addresses
     ips=()
     main_command=""
@@ -43,32 +65,57 @@ process_arguments() {
         case "$1" in
             -ip)
                 shift
+                if [[ ! $1 || $1 == -* ]]; then
+                    echo "Error: -ip flag requires at least one IP address"
+                    exit 1
+                fi
                 while [[ $1 && $1 != -* ]]; do
                     ip_args+=("$1")
                     shift
                 done
-                parse_ips ips "${ip_args[@]}"
+                if ! parse_ips ips "${ip_args[@]}"; then
+                    echo "Error: Failed to process IP addresses"
+                    exit 1
+                fi
                 ;;
             -cip)
                 shift
+                if [[ ! $1 || $1 == -* ]]; then
+                    echo "Error: -cip flag requires at least one IP address"
+                    exit 1
+                fi
                 while [[ $1 && $1 != -* ]]; do
                     cip_args+=("$1")
                     shift
                 done
-                parse_ips cips "${cip_args[@]}"
+                if ! parse_ips cips "${cip_args[@]}"; then
+                    echo "Error: Failed to process companion IP addresses"
+                    exit 1
+                fi
                 ;;
             -cmd)
-                [ -z "$2" ] && echo "Error: No command" && exit 1
+                if [ -z "$2" ]; then
+                    echo "Error: -cmd flag requires a command argument"
+                    exit 1
+                fi
                 main_command="$2"
                 shift 2
                 ;;
             -ccmd)
-                [ -z "$2" ] && echo "Error: No command" && exit 1
+                if [ -z "$2" ]; then
+                    echo "Error: -ccmd flag requires a command argument"
+                    exit 1
+                fi
                 cmain_command="$2"
                 shift 2
                 ;;
             *)
-                echo "Unknown option: $1"
+                echo "Error: Unknown option '$1'"
+                echo "Available options:"
+                echo "  -ip   : List of IP addresses for primary drones"
+                echo "  -cip  : List of IP addresses for companion drones"
+                echo "  -cmd  : Command to execute on primary drones"
+                echo "  -ccmd : Command to execute on companion drones"
                 exit 1
                 ;;
         esac
@@ -77,22 +124,30 @@ process_arguments() {
 
 # Function that executes commands
 execute_commands() {
+    if [ ${#ips[@]} -eq 0 ] && [ -z "$main_command" ]; then
+        echo "Warning: No primary drone IPs or commands specified"
+    fi
+    
+    if [ ${#cips[@]} -eq 0 ] && [ -z "$cmain_command" ]; then
+        echo "Warning: No companion drone IPs or commands specified"
+    fi
+
     for ip in "${ips[@]}"; do
-        drone_num="${ip##*.}" # Store last part of IP in accessible variable to dynamically run commands
-        command="${main_command//\$drone_num/$drone_num}"
+        DRONE_NUM="${ip##*.}" # Store last part of IP in accessible variable to dynamically run commands
+        command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
         echo "Running '$command' on $ip"
         # ssh root@"$ip" "$command"
         # Debug Command
-        # - echo $drone_num
+        # - echo $DRONE_NUM
     done
 
     for cip in "${cips[@]}"; do
-        drone_num="${cip##*.}"
-        command="${cmain_command//\$drone_num/$drone_num}"
+        DRONE_NUM="${cip##*.}"
+        command="${cmain_command//\$DRONE_NUM/$DRONE_NUM}"
         echo "Running '$command' on $cip"
         # ssh root@"$cip" "$command"
         # Debug Command
-        # - echo $drone_num
+        # - echo $DRONE_NUM
     done
 }
 

@@ -1,15 +1,15 @@
 {
-    "plugins": [
-        {
-            "type": "add",
-            "pluginName": "fleet.shell"
-        },
-        {
-            "type": "add",
-            "pluginName": "fleet.prettier"
-        }
-    ],
-    "prettier.mode": "Auto",
-    "toolchains": [],
-    "editor.formatOnSave": true
+  "plugins": [
+    {
+      "type": "add",
+      "pluginName": "fleet.shell"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.prettier"
+    }
+  ],
+  "prettier.mode": "Auto",
+  "toolchains": [],
+  "editor.formatOnSave": true
 }
