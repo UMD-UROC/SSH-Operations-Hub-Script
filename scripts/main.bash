@@ -158,7 +158,7 @@ execute_commands() {
         DRONE_NUM="${ip##*.}"
         command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
         echo "Running '$command' on $primary_user@$ip"
-        #ssh "$primary_user@$ip" "$command"
+        ssh "$primary_user@$ip" "$command"
     done
 
     # Execute for secondary group
