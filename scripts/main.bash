@@ -6,6 +6,9 @@
 #   0 on success, 1 on failure
 ###############################################################################
 
+# Make sure CTRL`+C` stops all SSH connections
+trap 'echo "Interrupted! Stopping all SSH connections..."; kill 0; exit 1' SIGINT
+
 # Allowed IPs: add ip ranges with {ip_range_start..ip_range_end} ex) {1..10}
 allowed_ips=({1..10} 15 17 {20..25})
 
@@ -158,8 +161,9 @@ execute_commands() {
         DRONE_NUM="${ip##*.}"
         command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
         echo "Running '$command' on $primary_user@$ip"
-        ssh "$primary_user@$ip" "$command"
+        ssh "$primary_user@$ip" "$command" &
     done
+    
 
     # Execute for secondary group
     if [ ${#secondary_ips[@]} -gt 0 ] && [ -n "$secondary_user" ]; then
@@ -167,7 +171,7 @@ execute_commands() {
             DRONE_NUM="${ip##*.}"
             command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
             echo "Running '$command' on $secondary_user@$ip"
-            ssh "$secondary_user@$ip" "$command"
+            ssh "$secondary_user@$ip" "$command" &
         done
     fi
 }
@@ -175,6 +179,7 @@ execute_commands() {
 # Main script execution
 process_arguments "$@"
 execute_commands
+wait
 
 # Indicate success
 exit 0
