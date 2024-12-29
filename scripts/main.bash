@@ -159,19 +159,20 @@ execute_commands() {
     # Execute for primary group
     for ip in "${primary_ips[@]}"; do
         DRONE_NUM="${ip##*.}"
+        user="${primary_user//\$DRONE_NUM/$DRONE_NUM}"
         command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
-        echo "Running '$command' on $primary_user@$ip"
-        ssh "$primary_user@$ip" "$command" &
+        echo "Running '$command' on $user@$ip"
+        ssh "$user@$ip" "$command" &
     done
-    
 
     # Execute for secondary group
     if [ ${#secondary_ips[@]} -gt 0 ] && [ -n "$secondary_user" ]; then
         for ip in "${secondary_ips[@]}"; do
             DRONE_NUM="${ip##*.}"
+            user="${secondary_user//\$DRONE_NUM/$DRONE_NUM}"
             command="${main_command//\$DRONE_NUM/$DRONE_NUM}"
-            echo "Running '$command' on $secondary_user@$ip"
-            ssh "$secondary_user@$ip" "$command" &
+            echo "Running '$command' on $user@$ip"
+            ssh "$user@$ip" "$command" &
         done
     fi
 }
