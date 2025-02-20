@@ -1,12 +1,12 @@
-# UMD UAS Drone Data Management Application
+# SSH Operations Hub
 
-A bash script for managing and executing commands across multiple drones in the UMD UAS Lab network.
+A bash script for managing and executing commands across multiple clients via ssh
 
 ## Features
 
 - IP address validation and deduplication
 - Support for primary and secondary drone groups
-- Variable substitution in commands using `$DRONE_NUM`
+- Variable substitution in commands using `$CLIENT_NUM`
 - Comprehensive error handling
 - Configurable allowed IP ranges
 
@@ -34,12 +34,12 @@ A bash script for managing and executing commands across multiple drones in the 
 
 Execute a command on primary drones:
 ```bash
-./main.bash -primary 1 2 3 -user pilot -cmd "echo Drone \$DRONE_NUM ready"
+./main.bash -primary 1 2 3 -user root -cmd "echo Client \$CLIENT_NUM_NUM ready"
 ```
 
 Execute on both primary and secondary groups:
 ```bash
-./main.bash -primary 1 2 -user pilot1 -secondary 3 4 -suser pilot2 -cmd "status"
+./main.bash -primary 1 2 -user root -secondary 3 4 -suser joe -cmd "status"
 ```
 
 ## Error Handling
