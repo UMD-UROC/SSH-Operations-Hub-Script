@@ -218,8 +218,8 @@ execute_ssh_command() {
 process_arguments() {
     if [ $# -eq 0 ]; then
         echo "Error: No arguments provided"
-        echo "Usage: $0 [-primary|-ip ip_list] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command]"
-        echo "To change default IP prefix and Allowed IPs, modify the variables in the config file"
+        echo "Usage: $0 [-primary|-ip ip_list] [-ip-prefix 192.168.1] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command]"
+        echo "To change Allowed IPs, modify the variable in the config file"
         echo "For more information, see the documentation at https://cdenihan.gitbook.io/ssh-operations-hub-script-docs"
         exit 1
     fi
@@ -229,7 +229,7 @@ process_arguments() {
     secondary_ips=()
     main_command=""
     primary_user="root"    # Set default user to root
-    secondary_user="root"  # Set default user to root
+    secondary_user="admin"  # Set default user to root
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -307,11 +307,11 @@ process_arguments() {
             echo "Error: Unknown option '$1'"
             echo "Available options:"
             echo "  -primary, -ip  : List of IP addresses for primary group"
+            echo "  -ip-prefix     : Custom IP prefix (e.g., 192.168.1)"
             echo "  -puser, -user  : Username for primary group"
             echo "  -secondary     : List of IP addresses for secondary group"
             echo "  -suser         : Username for secondary group"
             echo "  -cmd           : Command to execute on all clients"
-            echo "  -ip-prefix     : Custom IP prefix (e.g., 192.168.1)"
             exit 1
             ;; 
         esac
