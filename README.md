@@ -1,57 +1,28 @@
 # SSH Operations Hub
 
-A bash script for managing and executing commands across multiple clients via ssh
+A bash script for managing and executing commands across multiple clients via ssh.
+
+**Full Documentation:** [SSH Operations Hub Documentation](https://cdenihan.gitbook.io/ssh-operations-hub-script-docs)
+
+## Basic Usage
+
+```bash
+./ssh-operations-hub [-primary|-ip ip_list] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command] [-prefix ip_prefix]
+```
+
+### Quick Example
+
+```bash
+./ssh-operations-hub -primary 1 2 3 -user root -cmd "echo Hello from client \$CLIENT_NUM"
+```
 
 ## Features
 
+- Execute commands across multiple SSH clients
 - IP address validation and deduplication
 - Support for primary and secondary drone groups
-- Variable substitution in commands using `$CLIENT_NUM`
+- Variable substitution in commands
 - Comprehensive error handling
-- Configurable allowed IP ranges
 
-## Usage
-
-```bash
-./main.bash [-primary|-ip ip_list] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command]
-```
-
-### Arguments
-
-- `-primary`, `-ip`: List of IP addresses for primary group
-- `-puser`, `-user`: Username for primary group
-- `-secondary`: List of IP addresses for secondary group
-- `-suser`: Username for secondary group
-- `-cmd`: Command to execute on all drones
-
-### IP Address Format
-
-- IP addresses are specified using the last octet only (1-255)
-- Allowed IP ranges are configured in the script
-- Current allowed IPs: 1-10, 15, 17, 20-25
-
-### Examples
-
-Execute a command on primary drones:
-```bash
-./main.bash -primary 1 2 3 -user root -cmd "echo Client \$CLIENT_NUM_NUM ready"
-```
-
-Execute on both primary and secondary groups:
-```bash
-./main.bash -primary 1 2 -user root -secondary 3 4 -suser joe -cmd "status"
-```
-
-## Error Handling
-
-The script includes comprehensive error checking for:
-- Invalid IP addresses
-- Duplicate IPs
-- Missing arguments
-- Unauthorized IP ranges
-- Invalid command format
-
-## Return Values
-
-- 0: Success
-- 1: Error (with descriptive message)
+For complete documentation, configuration options, and advanced usage examples, please visit:
+https://cdenihan.gitbook.io/ssh-operations-hub-script-docs
