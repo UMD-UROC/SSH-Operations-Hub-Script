@@ -8,7 +8,9 @@ For optimal interaction with the script, please follow the installation instruct
 {% tab title="Ubuntu 22.04 LTS" %}
 ```bash
 # Install via Curl
+curl -O https://raw.githubusercontent.com/cdenihan/SSH-Operations-Hub-Script/refs/heads/main/scripts/ssh-operations-hub.bash
 curl -s https://raw.githubusercontent.com/cdenihan/SSH-Operations-Hub-Script/main/scripts/install.bash | bash
+touch ~/.config/ssh-operations-hub/defaults.conf
 ```
 {% endtab %}
 {% endtabs %}
