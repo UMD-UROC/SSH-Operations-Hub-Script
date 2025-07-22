@@ -329,6 +329,13 @@ class SSHOperationsHub:
             epilog="For more information, see the documentation at https://umd-uroc.github.io/docs/SSH Operations Hub"
         )
         
+        # Version argument
+        parser.add_argument(
+            '--version',
+            action='version',
+            version='SSH Operations Hub 2.0.0'
+        )
+        
         # Primary/IP arguments (mutually exclusive names)
         primary_group = parser.add_mutually_exclusive_group()
         primary_group.add_argument(
@@ -390,13 +397,6 @@ class SSHOperationsHub:
 
 def main():
     """Main entry point."""
-    if len(sys.argv) == 1:
-        print("Error: No arguments provided")
-        print(f"Usage: {sys.argv[0]} [--primary-ips|--ips ip_list] [--ip-prefix 192.168.1] [--primary-user username] [--secondary-ips ip_list] [--secondary-user username] [--command command]")
-        print("To change Allowed IPs, modify the config file in JSON format")
-        print("For more information, see the documentation at https://umd-uroc.github.io/docs/SSH Operations Hub")
-        sys.exit(1)
-    
     hub = SSHOperationsHub()
     hub.run(sys.argv[1:])
 
