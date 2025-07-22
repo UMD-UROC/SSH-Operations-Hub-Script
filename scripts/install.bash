@@ -14,7 +14,7 @@
 # 4. Creates system-wide symlink for global access
 #
 # For complete documentation:
-# https://cdenihan.gitbook.io/ssh-operations-hub-script-docs
+# https://umd-uroc.github.io/docs/SSH Operations Hub
 
 # This script installs the SSH Operations Hub tool and sets up the necessary
 # directory structure and permissions for secure operation.

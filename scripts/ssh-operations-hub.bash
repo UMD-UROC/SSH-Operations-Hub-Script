@@ -20,7 +20,7 @@
 # 2. System config: $SCRIPT_DIR/../config/defaults.conf
 #
 # For complete documentation:
-# https://cdenihan.gitbook.io/ssh-operations-hub-script-docs
+# https://umd-uroc.github.io/docs/SSH Operations Hub
 ################################################################################
 
 #===== INITIALIZATION ==========================================================#
@@ -60,7 +60,7 @@ SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-n
 #===== UTILITY FUNCTIONS =====================================================#
 
 # Expand IP ranges into an array
-# Examples: 
+# Examples:
 # - "1-5" expands to "1 2 3 4 5"
 # - "7" remains "7"
 # - "1-3 7-9" expands to "1 2 3 7 8 9"
@@ -84,7 +84,7 @@ parse_allowed_ips() {
     local ranges
     IFS=' ' read -ra ranges <<< "$ALLOWED_IPS"
     allowed_ips=()
-    
+
     for range in "${ranges[@]}"; do
         while IFS= read -r num; do
             allowed_ips+=("$num")
@@ -99,14 +99,14 @@ validate_ip_suffix() {
     local ip_suffix=$1
 
     [[ "$ip_suffix" =~ ^[0-9]+$ ]] || return 1
-    
+
     # Check if IP is in allowed list
     for allowed in "${allowed_ips[@]}"; do
         if [[ "$ip_suffix" == "$allowed" ]]; then
             return 0
         fi
     done
-    
+
     return 1
 }
 
@@ -117,12 +117,12 @@ validate_ip_prefix() {
     local prefix="$1"
     # Remove trailing dot if present
     prefix="${prefix%%.}"
-    
+
     # Match X.X.X format where X is 1-3 digits
     if [[ ! "$prefix" =~ ^([0-9]{1,3}\.){2}[0-9]{1,3}$ ]]; then
         return 1
     fi
-    
+
     # Validate each octet is in range 0-255
     local IFS='.'
     read -ra octets <<< "$prefix"
@@ -220,7 +220,7 @@ process_arguments() {
         echo "Error: No arguments provided"
         echo "Usage: $0 [-primary|-ip ip_list] [-ip-prefix 192.168.1] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command]"
         echo "To change Allowed IPs, modify the variable in the config file"
-        echo "For more information, see the documentation at https://cdenihan.gitbook.io/ssh-operations-hub-script-docs"
+        echo "For more information, see the documentation at https://umd-uroc.github.io/docs/SSH Operations Hub"
         exit 1
     fi
 
@@ -233,7 +233,7 @@ process_arguments() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-        -primary | -ip) 
+        -primary | -ip)
             shift
             if [[ ! $1 || $1 == -* ]]; then
                 echo "Error: -primary/-ip flag requires at least one IP address"
@@ -248,8 +248,8 @@ process_arguments() {
                 echo "Error: Failed to process primary IP addresses"
                 exit 1
             fi
-            ;; 
-        -secondary) 
+            ;;
+        -secondary)
             shift
             if [[ ! $1 || $1 == -* ]]; then
                 echo "Error: -secondary flag requires at least one IP address"
@@ -264,31 +264,31 @@ process_arguments() {
                 echo "Error: Failed to process secondary IP addresses"
                 exit 1
             fi
-            ;; 
-        -puser | -user) 
+            ;;
+        -puser | -user)
             if [ -z "$2" ]; then
                 echo "Error: -puser/-user flag requires a username argument"
                 exit 1
             fi
             primary_user="$2"
             shift 2
-            ;; 
-        -suser) 
+            ;;
+        -suser)
             if [ -z "$2" ]; then
                 echo "Error: -suser flag requires a username argument"
                 exit 1
             fi
             secondary_user="$2"
             shift 2
-            ;; 
-        -cmd) 
+            ;;
+        -cmd)
             if [ -z "$2" ]; then
                 echo "Error: -cmd flag requires a command argument"
                 exit 1
             fi
             main_command="$2"
             shift 2
-            ;; 
+            ;;
         -ip-prefix)
             if [ -z "$2" ]; then
                 echo "Error: -ip-prefix flag requires an argument (e.g., 192.168.1)"
@@ -303,7 +303,7 @@ process_arguments() {
             IP_PREFIX="$new_prefix"
             shift 2
             ;;
-        *) 
+        *)
             echo "Error: Unknown option '$1'"
             echo "Available options:"
             echo "  -primary, -ip  : List of IP addresses for primary group"
@@ -313,7 +313,7 @@ process_arguments() {
             echo "  -suser         : Username for secondary group"
             echo "  -cmd           : Command to execute on all clients"
             exit 1
-            ;; 
+            ;;
         esac
     done
 }
@@ -323,13 +323,13 @@ process_arguments() {
 # Implements global timeout and proper process cleanup
 execute_commands() {
     local timeout=3600  # 1 hour timeout
-    
+
     # Start timeout monitor in background
     (
         sleep $timeout
         echo "Error: Global execution timeout reached. Terminating..."
         pkill -P $$
-    ) & 
+    ) &
     local timeout_pid=$!
 
     [[ ${#primary_ips[@]} -eq 0 && ${#secondary_ips[@]} -eq 0 ]] && { echo "Warning: No IP addresses specified"; return; }
