@@ -45,7 +45,7 @@ sudo python3 install.py install --system
 
 ### Basic Usage
 ```bash
-ssh-operations-hub -ip 1 2 3 -user root -cmd "uptime"
+ssh-operations-hub --ips 1 2 3 --primary-user root --command "uptime"
 ```
 
 ### Advanced Examples
@@ -53,51 +53,49 @@ ssh-operations-hub -ip 1 2 3 -user root -cmd "uptime"
 #### Primary and Secondary Groups
 ```bash
 ssh-operations-hub \
-  -primary 1 2 3 -puser root \
-  -secondary 10 11 12 -suser admin \
-  -cmd "systemctl status nginx"
+  --primary-ips 1 2 3 --primary-user root \
+  --secondary-ips 10 11 12 --secondary-user admin \
+  --command "systemctl status nginx"
 ```
 
 #### Custom IP Prefix
 ```bash
-ssh-operations-hub -ip-prefix 192.168.1 -ip 10 20 30 -user admin -cmd "df -h"
+ssh-operations-hub --ip-prefix 192.168.1 --ips 10 20 30 --primary-user admin --command "df -h"
 ```
 
 #### Variable Substitution
 ```bash
-ssh-operations-hub -ip 1 2 3 -user "user\$CLIENT_NUM" -cmd "echo 'I am client \$CLIENT_NUM'"
+ssh-operations-hub --ips 1 2 3 --primary-user "user\$CLIENT_NUM" --command "echo 'I am client \$CLIENT_NUM'"
 ```
 
 ### Command-Line Options
 
-- `-primary`, `-ip`: List of IP suffixes for primary group
-- `-secondary`: List of IP suffixes for secondary group  
-- `-puser`, `-user`: Username for primary group (default: root)
-- `-suser`: Username for secondary group (default: admin)
-- `-cmd`: Command to execute on all clients (required)
-- `-ip-prefix`: Custom IP prefix (e.g., 192.168.1)
+- `--primary-ips`, `--ips`: List of IP suffixes for primary group
+- `--secondary-ips`: List of IP suffixes for secondary group  
+- `--primary-user`: Username for primary group (default: root)
+- `--secondary-user`: Username for secondary group (default: admin)
+- `--command`: Command to execute on all clients (required)
+- `--ip-prefix`: Custom IP prefix (e.g., 192.168.1)
 
 ## Configuration
 
 ### Configuration Locations (in order of preference)
-1. `$HOME/.config/ssh-operations-hub/defaults.conf` (User config)
-2. `<script_dir>/config/defaults.conf` (Development)
-3. `/etc/ssh-operations-hub/defaults.conf` (System config)
+1. `$HOME/.config/ssh-operations-hub/defaults.json` (User config)
+2. `<script_dir>/config/defaults.json` (Development)
+3. `/etc/ssh-operations-hub/defaults.json` (System config)
 
 ### Configuration Format
-```bash
-# Default IP prefix (first three octets)
-IP_PREFIX="10.200.142"
-
-# Allowed IP suffixes - can be individual numbers or ranges
-# Format: space-separated list of numbers and ranges
-ALLOWED_IPS="1 2 3 4 5 6 7 8 9 10 15 17 20 21 22 23 24 25 150-154"
+```json
+{
+    "ip_prefix": "10.200.142",
+    "allowed_ips": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "15", "17", "20", "21", "22", "23", "24", "25", "150-154"]
+}
 ```
 
 ### IP Range Format
-- Individual IPs: `1 2 3`
-- Ranges: `1-5` (expands to 1 2 3 4 5)
-- Mixed: `1 2 5-7 10` (expands to 1 2 5 6 7 10)
+- Individual IPs: `["1", "2", "3"]`
+- Ranges: `["1-5"]` (expands to 1 2 3 4 5)
+- Mixed: `["1", "2", "5-7", "10"]` (expands to 1 2 5 6 7 10)
 
 ## Technical Details
 
@@ -127,23 +125,45 @@ ALLOWED_IPS="1 2 3 4 5 6 7 8 9 10 15 17 20 21 22 23 24 25 150-154"
 
 ## Migration from Bash Version
 
-The Python version is fully backward compatible with the original Bash version:
+The Python version has been modernized with a new, more intuitive interface:
 
-### Compatible Features
-- ✅ Same command-line interface
-- ✅ Same configuration file format  
-- ✅ Same IP validation rules
+### Key Changes
+- 🔄 **Modern CLI Arguments**: Updated from short flags (`-ip`, `-cmd`, `-suser`) to descriptive long options (`--ips`, `--command`, `--secondary-user`)
+- 📄 **JSON Configuration**: Migrated from bash-style config to standard JSON format
+- 🗑️ **Removed Legacy**: Old bash scripts have been removed for cleaner codebase
+- 🧹 **Enhanced Uninstaller**: Automatically removes old bash installations
+
+### Migration Steps
+1. **Update CLI Commands**: Replace old arguments:
+   - `-ip` → `--ips` or `--primary-ips`
+   - `-cmd` → `--command`
+   - `-user`/`-puser` → `--primary-user`
+   - `-suser` → `--secondary-user`
+   - `-primary` → `--primary-ips`
+   - `-secondary` → `--secondary-ips`
+
+2. **Convert Configuration**: Update config files from bash format to JSON:
+   ```bash
+   # Old format (defaults.conf)
+   IP_PREFIX="10.200.142"
+   ALLOWED_IPS="1 2 3 150-154"
+   ```
+   ```json
+   // New format (defaults.json)
+   {
+       "ip_prefix": "10.200.142", 
+       "allowed_ips": ["1", "2", "3", "150-154"]
+   }
+   ```
+
+3. **Uninstall Old Version**: The uninstaller will automatically remove old bash files
+
+### Core Features Preserved
+- ✅ Same IP validation and whitelisting rules
 - ✅ Same variable substitution (`$CLIENT_NUM`)
-- ✅ Same output formatting
-- ✅ Same error handling behavior
-
-### Improvements
-- 🚀 Better performance with large server lists
-- 🔧 More robust error handling
-- 📦 Professional installation system
-- ⚡ More efficient parallel processing
-- 🛡️ Enhanced security validation
-- 🧪 Comprehensive test coverage
+- ✅ Same dual server group functionality  
+- ✅ Same parallel execution capabilities
+- ✅ Same output formatting and error messages
 
 ## Testing
 

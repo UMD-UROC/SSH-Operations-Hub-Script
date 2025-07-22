@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch, MagicMock, call
 import tempfile
 import os
+import subprocess
 from pathlib import Path
 import sys
 
@@ -46,17 +47,17 @@ class TestSSHOperationsHub(unittest.TestCase):
     def test_parse_allowed_ips(self):
         """Test parsing of allowed IPs configuration."""
         # Test mixed ranges and individual IPs
-        result = self.hub._parse_allowed_ips("1-3 5 7-9")
+        result = self.hub._parse_allowed_ips(["1-3", "5", "7-9"])
         expected = ["1", "2", "3", "5", "7", "8", "9"]
         self.assertEqual(result, expected)
         
         # Test single range
-        result = self.hub._parse_allowed_ips("10-12")
+        result = self.hub._parse_allowed_ips(["10-12"])
         expected = ["10", "11", "12"]
         self.assertEqual(result, expected)
         
         # Test individual IPs only
-        result = self.hub._parse_allowed_ips("1 2 3")
+        result = self.hub._parse_allowed_ips(["1", "2", "3"])
         expected = ["1", "2", "3"]
         self.assertEqual(result, expected)
 
@@ -233,18 +234,18 @@ class TestSSHOperationsHub(unittest.TestCase):
         parser = self.hub._create_parser()
         
         # Test valid arguments
-        args = parser.parse_args(['-ip', '1', '2', '-cmd', 'echo test'])
+        args = parser.parse_args(['--ips', '1', '2', '--command', 'echo test'])
         self.assertEqual(args.primary, ['1', '2'])
         self.assertEqual(args.cmd, 'echo test')
         
         # Test with all arguments
         args = parser.parse_args([
-            '-primary', '1', '2',
-            '-secondary', '3', '4',
-            '-puser', 'user1',
-            '-suser', 'user2',
-            '-cmd', 'echo test',
-            '-ip-prefix', '192.168.1'
+            '--primary-ips', '1', '2',
+            '--secondary-ips', '3', '4',
+            '--primary-user', 'user1',
+            '--secondary-user', 'user2',
+            '--command', 'echo test',
+            '--ip-prefix', '192.168.1'
         ])
         self.assertEqual(args.primary, ['1', '2'])
         self.assertEqual(args.secondary, ['3', '4'])
@@ -256,9 +257,14 @@ class TestSSHOperationsHub(unittest.TestCase):
     def test_load_config(self):
         """Test configuration file loading."""
         # Create temporary config file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.conf', delete=False) as f:
-            f.write('IP_PREFIX="192.168.1"\n')
-            f.write('ALLOWED_IPS="1 2 3 5-7 10"\n')
+        import json
+        config_data = {
+            "ip_prefix": "192.168.1",
+            "allowed_ips": ["1", "2", "3", "5-7", "10"]
+        }
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(config_data, f)
             temp_config = f.name
         
         try:
@@ -267,18 +273,12 @@ class TestSSHOperationsHub(unittest.TestCase):
                 hub = SSHOperationsHub()
                 # Manually call the method we want to test
                 with open(temp_config, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and not line.startswith('#'):
-                            if '=' in line:
-                                key, value = line.split('=', 1)
-                                key = key.strip()
-                                value = value.strip().strip('"')
-                                
-                                if key == 'IP_PREFIX':
-                                    hub.ip_prefix = value
-                                elif key == 'ALLOWED_IPS':
-                                    hub.allowed_ips = hub._parse_allowed_ips(value)
+                    config = json.load(f)
+                    
+                if 'ip_prefix' in config:
+                    hub.ip_prefix = config['ip_prefix']
+                if 'allowed_ips' in config:
+                    hub.allowed_ips = hub._parse_allowed_ips(config['allowed_ips'])
             
             # Verify configuration was loaded correctly
             self.assertEqual(hub.ip_prefix, "192.168.1")
@@ -304,7 +304,7 @@ class TestIntegration(unittest.TestCase):
         hub.allowed_ips = ["1", "2", "3", "4", "5"]
         
         # Test successful run
-        args = ['-ip', '1', '2', '-user', 'testuser', '-cmd', 'echo test']
+        args = ['--ips', '1', '2', '--primary-user', 'testuser', '--command', 'echo test']
         hub.run(args)
         
         # Verify execute_commands was called with correct parameters
@@ -322,7 +322,7 @@ class TestIntegration(unittest.TestCase):
         hub = SSHOperationsHub()
         
         with self.assertRaises(SystemExit) as cm:
-            hub.run(['-ip', '1', '-cmd', 'test'])
+            hub.run(['--ips', '1', '--command', 'test'])
         
         self.assertEqual(cm.exception.code, 1)
 

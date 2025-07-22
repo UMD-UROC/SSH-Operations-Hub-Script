@@ -15,15 +15,15 @@ SECURITY FEATURES:
 - Sanitized command handling
 
 CONFIGURATION FILES:
-1. User config: $HOME/.config/ssh-operations-hub/defaults.conf
-2. System config: /etc/ssh-operations-hub/defaults.conf
+1. User config: $HOME/.config/ssh-operations-hub/defaults.json
+2. System config: /etc/ssh-operations-hub/defaults.json
 
 For complete documentation:
 https://umd-uroc.github.io/docs/SSH Operations Hub
 """
 
 import argparse
-import configparser
+import json
 import logging
 import os
 import re
@@ -77,41 +77,33 @@ class SSHOperationsHub:
         sys.exit(1)
 
     def _load_config(self):
-        """Load configuration from available config files."""
+        """Load configuration from available JSON config files."""
         config_locations = [
-            Path.home() / ".config" / "ssh-operations-hub" / "defaults.conf",
-            Path(__file__).parent / "config" / "defaults.conf",
-            Path("/etc/ssh-operations-hub/defaults.conf")
+            Path.home() / ".config" / "ssh-operations-hub" / "defaults.json",
+            Path(__file__).parent / "config" / "defaults.json",
+            Path("/etc/ssh-operations-hub/defaults.json")
         ]
         
         for config_file in config_locations:
             if config_file.exists():
                 try:
-                    # Handle simple bash-style config format
                     with open(config_file, 'r') as f:
-                        for line in f:
-                            line = line.strip()
-                            if line and not line.startswith('#'):
-                                if '=' in line:
-                                    key, value = line.split('=', 1)
-                                    key = key.strip()
-                                    value = value.strip().strip('"')
-                                    
-                                    if key == 'IP_PREFIX':
-                                        self.ip_prefix = value
-                                    elif key == 'ALLOWED_IPS':
-                                        self.allowed_ips = self._parse_allowed_ips(value)
+                        config = json.load(f)
+                        
+                    if 'ip_prefix' in config:
+                        self.ip_prefix = config['ip_prefix']
+                    if 'allowed_ips' in config:
+                        self.allowed_ips = self._parse_allowed_ips(config['allowed_ips'])
                     break
                 except Exception as e:
                     self.logger.warning(f"Failed to load config from {config_file}: {e}")
 
-    def _parse_allowed_ips(self, allowed_ips_str: str) -> List[str]:
-        """Parse ALLOWED_IPS configuration string into list of IP suffixes."""
+    def _parse_allowed_ips(self, allowed_ips: List[str]) -> List[str]:
+        """Parse allowed_ips configuration list into expanded list of IP suffixes."""
         allowed = []
-        ranges = allowed_ips_str.split()
         
-        for range_str in ranges:
-            allowed.extend(self._expand_range(range_str))
+        for item in allowed_ips:
+            allowed.extend(self._expand_range(item))
         
         return allowed
 
@@ -340,51 +332,55 @@ class SSHOperationsHub:
         # Primary/IP arguments (mutually exclusive names)
         primary_group = parser.add_mutually_exclusive_group()
         primary_group.add_argument(
-            '-primary', '--primary',
+            '--primary-ips',
             nargs='+',
             metavar='IP_SUFFIX',
+            dest='primary',
             help='List of IP suffixes for primary group'
         )
         primary_group.add_argument(
-            '-ip', '--ip',
+            '--ips',
             nargs='+',
             metavar='IP_SUFFIX',
-            dest='primary',  # Same destination as -primary
-            help='List of IP suffixes (alias for -primary)'
+            dest='primary',  # Same destination as --primary-ips
+            help='List of IP suffixes (alias for --primary-ips)'
         )
         
         # Secondary IPs
         parser.add_argument(
-            '-secondary', '--secondary',
+            '--secondary-ips',
             nargs='+',
             metavar='IP_SUFFIX',
+            dest='secondary',
             help='List of IP suffixes for secondary group'
         )
         
         # User arguments
         parser.add_argument(
-            '-puser', '-user', '--puser', '--user',
+            '--primary-user',
             default='root',
             dest='puser',
             metavar='USERNAME',
             help='Username for primary group (default: root)'
         )
         parser.add_argument(
-            '-suser', '--suser',
+            '--secondary-user',
             default='admin',
+            dest='suser',
             metavar='USERNAME',
             help='Username for secondary group (default: admin)'
         )
         
         # Command and IP prefix
         parser.add_argument(
-            '-cmd', '--cmd',
+            '--command',
             required=True,
+            dest='cmd',
             metavar='COMMAND',
             help='Command to execute on all clients'
         )
         parser.add_argument(
-            '-ip-prefix', '--ip-prefix',
+            '--ip-prefix',
             metavar='PREFIX',
             help='Custom IP prefix (e.g., 192.168.1)'
         )
@@ -396,8 +392,8 @@ def main():
     """Main entry point."""
     if len(sys.argv) == 1:
         print("Error: No arguments provided")
-        print(f"Usage: {sys.argv[0]} [-primary|-ip ip_list] [-ip-prefix 192.168.1] [-puser|-user username] [-secondary ip_list] [-suser username] [-cmd command]")
-        print("To change Allowed IPs, modify the variable in the config file")
+        print(f"Usage: {sys.argv[0]} [--primary-ips|--ips ip_list] [--ip-prefix 192.168.1] [--primary-user username] [--secondary-ips ip_list] [--secondary-user username] [--command command]")
+        print("To change Allowed IPs, modify the config file in JSON format")
         print("For more information, see the documentation at https://umd-uroc.github.io/docs/SSH Operations Hub")
         sys.exit(1)
     

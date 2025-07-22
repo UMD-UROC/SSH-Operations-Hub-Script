@@ -239,6 +239,16 @@ exec python3 "{target_python_script}" "$@"
                 target_script.unlink()
                 print(f"Removed {target_script}")
             
+            # Remove old bash files if they exist
+            old_bash_files = [
+                bin_dir / "ssh-operations-hub.bash",
+                bin_dir / "ssh-operations-hub",  # Could be bash version
+            ]
+            for old_file in old_bash_files:
+                if old_file.exists():
+                    old_file.unlink()
+                    print(f"Removed old file {old_file}")
+            
             # Remove lib directory for system installation
             if system_wide:
                 lib_dir = Path("/usr/local/lib/ssh-operations-hub")
