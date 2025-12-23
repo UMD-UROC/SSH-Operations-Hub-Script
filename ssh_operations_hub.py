@@ -118,7 +118,13 @@ class SSHOperationsHub:
             except ValueError:
                 pass
         
-        return [range_str] if range_str.isdigit() else []
+                self.logger.warning(f"Invalid range format: '{range_str}' (unable to parse start/end as integers)")
+        
+        if range_str.isdigit():
+            return [range_str]
+        else:
+            self.logger.warning(f"Invalid IP suffix/range: '{range_str}' (not a digit or valid range)")
+            return []
 
     def _validate_ip_suffix(self, ip_suffix: str) -> bool:
         """Validate IP suffix against allowed list."""
