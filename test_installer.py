@@ -15,7 +15,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from install import SSHOperationsHubInstaller
 
-
+# Import SSHOperationsHubInstaller from the parent package
+from ..install import SSHOperationsHubInstaller
 class TestSSHOperationsHubInstaller(unittest.TestCase):
     """Test cases for SSH Operations Hub Installer."""
     
