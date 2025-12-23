@@ -174,7 +174,12 @@ class SSHOperationsHub:
 
     def _execute_ssh_command(self, user: str, ip: str, command: str) -> Tuple[bool, str]:
         """Execute a single SSH command with proper error handling."""
-        client_num = ip.split('.')[-1]
+        # Validate IP address format before splitting
+        try:
+            ip_obj = ipaddress.IPv4Address(ip)
+            client_num = ip.split('.')[-1]
+        except ipaddress.AddressValueError:
+            return False, f"[{ip}] Error: Invalid IPv4 address format"
         label = f"[Client {client_num} | {ip}]"
         
         if self.shutdown_event.is_set():
