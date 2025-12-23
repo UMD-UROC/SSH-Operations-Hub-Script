@@ -330,6 +330,5 @@ class TestIntegration(unittest.TestCase):
 
 if __name__ == '__main__':
     # Import required modules for testing
-    import subprocess
     
     unittest.main(verbosity=2)
